@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Form Maker – Easy Google Form Builder</title>
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #1a1a1f;
+      --surface2: #24242b;
+      --border: #33333d;
+      --text: #f0f0f5;
+      --muted: #9a9aa8;
+      --accent: #8b5cf6;
+      --accent-hover: #a78bfa;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --radius: 14px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.35);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      min-height: 100vh;
+      padding-bottom: 100px;
+    }
+
+    /* Top bar */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(15,15,18,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #8b5cf6, #6366f1);
+      border-radius: 9px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .topbar h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .topbar-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+    .btn-primary:hover { background: var(--accent-hover); }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 12px 16px 0;
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 8px 16px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: transparent;
+      border: none;
+      border-radius: 10px 10px 0 0;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tab.active {
+      color: var(--accent);
+      background: var(--surface);
+      border-bottom: 2px solid var(--accent);
+    }
+
+    /* Main content */
+    .main {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Form header card */
+    .form-header {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .form-header::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 5px;
+      background: linear-gradient(90deg, #8b5cf6, #6366f1);
+    }
+
+    .form-title-input,
+    .form-desc-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+    }
+
+    .form-title-input {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .form-desc-input {
+      font-size: 0.95rem;
+      color: var(--muted);
+      resize: none;
+      min-height: 48px;
+    }
+
+    /* Question card */
+    .question-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition: border-color 0.15s;
+    }
+
+    .question-card:focus-within {
+      border-color: var(--accent);
+    }
+
+    .q-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .q-number {
+      width: 26px;
+      height: 26px;
+      background: var(--surface2);
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+
+    .q-title-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 500;
+      outline: none;
+      padding: 6px 0;
+    }
+
+    .q-type-select {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .options-list {
+      margin: 8px 0 12px 36px;
+    }
+
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .option-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    .option-input:focus { border-color: var(--accent); }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+    }
+    .btn-icon:hover { background: var(--surface2); color: var(--text); }
+    .btn-icon.danger:hover { color: var(--danger); }
+
+    .add-option {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 4px 0;
+      margin-left: 36px;
+    }
+    .add-option:hover { text-decoration: underline; }
+
+    .q-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .required-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: var(--surface2);
+      border-radius: 22px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .slider::before {
+      content: "";
+      position: absolute;
+      height: 16px;
+      width: 16px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s;
+    }
+    input:checked + .slider { background: var(--success); }
+    input:checked + .slider::before { transform: translateX(18px); }
+
+    /* Add question button */
+    .add-question-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+
+    .add-btn {
+      flex: 1;
+      min-width: 120px;
+      padding: 12px;
+      background: var(--surface);
+      border: 1.5px dashed var(--border);
+      color: var(--muted);
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .add-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(139, 92, 246, 0.08);
+    }
+
+    /* Preview panel */
+    .preview-panel {
+      display: none;
+    }
+    .preview-panel.active {
+      display: block;
+    }
+
+    .preview-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .preview-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .preview-desc {
+      color: var(--muted);
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+
+    .preview-q {
+      margin-bottom: 22px;
+    }
+
+    .preview-q label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .preview-q .required-star {
+      color: var(--danger);
+    }
+
+    .preview-input {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    .preview-options label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      font-weight: 400;
+      cursor: pointer;
+    }
+
+    /* Export modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 480px;
+      max-height: 85vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h2 { font-size: 1.1rem; }
+
+    .modal-body { padding: 20px; }
+
+    .export-steps {
+      list-style: none;
+      counter-reset: step;
+    }
+
+    .export-steps li {
+      counter-increment: step;
+      position: relative;
+      padding-left: 42px;
+      margin-bottom: 18px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+
+    .export-steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
+      color: white;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .export-steps strong { color: var(--text); }
+
+    .code-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      margin-top: 8px;
+      color: #c4b5fd;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state p { margin-top: 8px; font-size: 0.9rem; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface2);
+      color: var(--text);
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      z-index: 200;
+      transition: transform 0.3s ease;
+      white-space: nowrap;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo">F</div>
+      <h1>Form Maker</h1>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" id="btnPreview">Preview</button>
+      <button class="btn btn-primary" id="btnExport">Create Google Form</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="build">Questions</button>
+    <button class="tab" data-tab="preview">Preview</button>
+  </div>
+
+  <div class="main">
+    <!-- BUILD VIEW -->
+    <div id="buildView">
+      <div class="form-header">
+        <input class="form-title-input" id="formTitle" value="Casual Wear Order Form – TEAM MOHFW" placeholder="Form title" />
+        <textarea class="form-desc-input" id="formDesc" placeholder="Form description">Please fill out this form to order your casual wear polo shirt. Refer to the design and size chart images provided.</textarea>
+      </div>
+
+      <div id="questionsList"></div>
+
+      <div class="add-question-bar">
+        <button class="add-btn" data-type="short">+ Short Answer</button>
+        <button class="add-btn" data-type="paragraph">+ Paragraph</button>
+        <button class="add-btn" data-type="dropdown">+ Dropdown</button>
+        <button class="add-btn" data-type="multiple">+ Multiple Choice</button>
+      </div>
+    </div>
+
+    <!-- PREVIEW VIEW -->
+    <div id="previewView" class="preview-panel">
+      <div class="preview-card" id="previewContent"></div>
+    </div>
+  </div>
+
+  <!-- Export Modal -->
+  <div class="modal-overlay" id="exportModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Create your Google Form</h2>
+        <button class="btn-icon" id="closeModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <ol class="export-steps">
+          <li>
+            <strong>Open Google Forms</strong><br>
+            Go to <a href="https://forms.google.com" target="_blank" style="color:var(--accent)">forms.google.com</a> and click <strong>Blank</strong>.
+          </li>
+          <li>
+            <strong>Copy the title & description</strong>
+            <div class="code-block" id="exportTitleDesc"></div>
+          </li>
+          <li>
+            <strong>Add questions one by one</strong>
+            <div class="code-block" id="exportQuestions" style="max-height:220px;overflow-y:auto;"></div>
+          </li>
+          <li>
+            <strong>Done!</strong><br>
+            Click the Send button (paper plane) to share the form link.
+          </li>
+        </ol>
+        <button class="btn btn-primary" style="width:100%;margin-top:8px;" id="copyAllBtn">
+          Copy all questions text
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Copied!</div>
+
+  <script>
+    // State
+    let questions = [
+      {
+        id: 1,
+        type: 'short',
+        title: 'Full Name',
+        required: true,
+        options: []
+      },
+      {
+        id: 2,
+        type: 'dropdown',
+        title: 'Sleeve',
+        required: false,
+        options: ['Short', 'Long']
+      }
+    ];
+    let nextId = 3;
+
+    const typeLabels = {
+      short: 'Short Answer',
+      paragraph: 'Paragraph',
+      dropdown: 'Dropdown',
+      multiple: 'Multiple Choice'
+    };
+
+    // Render questions
+    function renderQuestions() {
+      const list = document.getElementById('questionsList');
+      if (questions.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div style="font-size:2rem;">📝</div><p>No questions yet. Add one below.</p></div>`;
+        return;
+      }
+
+      list.innerHTML = questions.map((q, idx) => `
+        <div class="question-card" data-id="${q.id}">
+          <div class="q-top">
+            <div class="q-number">${idx + 1}</div>
+            <input class="q-title-input" value="${escapeAttr(q.title)}" placeholder="Question title" data-field="title" />
+            <select class="q-type-select" data-field="type">
+              <option value="short" ${q.type === 'short' ? 'selected' : ''}>Short Answer</option>
+              <option value="paragraph" ${q.type === 'paragraph' ? 'selected' : ''}>Paragraph</option>
+              <option value="dropdown" ${q.type === 'dropdown' ? 'selected' : ''}>Dropdown</option>
+              <option value="multiple" ${q.type === 'multiple' ? 'selected' : ''}>Multiple Choice</option>
+            </select>
+          </div>
+
+          ${(q.type === 'dropdown' || q.type === 'multiple') ? `
+            <div class="options-list">
+              ${q.options.map((opt, oi) => `
+                <div class="option-row">
+                  <input class="option-input" value="${escapeAttr(opt)}" data-opt="${oi}" placeholder="Option ${oi + 1}" />
+                  <button class="btn-icon danger" data-action="remove-opt" data-opt="${oi}">×</button>
+                </div>
+              `).join('')}
+            </div>
+            <button class="add-option" data-action="add-opt">+ Add option</button>
+          ` : ''}
+
+          <div class="q-footer">
+            <label class="required-toggle">
+              <div class="switch">
+                <input type="checkbox" ${q.required ? 'checked' : ''} data-field="required" />
+                <span class="slider"></span>
+              </div>
+              Required
+            </label>
+            <div>
+              <button class="btn-icon" data-action="move-up" title="Move up">↑</button>
+              <button class="btn-icon" data-action="move-down" title="Move down">↓</button>
+              <button class="btn-icon danger" data-action="delete" title="Delete">🗑</button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeAttr(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    // Event delegation for questions
+    document.getElementById('questionsList').addEventListener('input', (e) => {
+      const card = e.target.closest('.question-card');
+      if (!card) return;
+      const id = Number(card.dataset.id);
+      const q = questions.find(x => x.id === id);
+      if (!q) return;
+
+      if (e.target.dataset.field === 'title') {
+        q.title = e.target.value;
+      } else if (e.target.dataset.opt !== undefined) {
+        q.options[Number(e.target.dataset.opt)] = e.target.value;
+      }
+    });
+
+    document.getElementById('questionsList').addEventListener('change', (e) => {
+      const card = e.target.closest('.question-card');
+      if (!card) return;
+      const id = Number(card.dataset.id);
+      const q = questions.find(x => x.id === id);
+      if (!q) return;
+
+      if (e.target.dataset.field === 'type') {
+        q.type = e.target.value;
+        if ((q.type === 'dropdown' || q.type === 'multiple') && q.options.length === 0) {
+          q.options = ['Option 1', 'Option 2'];
+        }
+        renderQuestions();
+      } else if (e.target.dataset.field === 'required') {
+        q.required = e.target.checked;
+      }
+    });
+
+    document.getElementById('questionsList').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const card = btn.closest('.question-card');
+      if (!card) return;
+      const id = Number(card.dataset.id);
+      const idx = questions.findIndex(x => x.id === id);
+      if (idx === -1) return;
+      const q = questions[idx];
+
+      if (btn.dataset.action === 'delete') {
+        questions.splice(idx, 1);
+        renderQuestions();
+      } else if (btn.dataset.action === 'move-up' && idx > 0) {
+        [questions[idx - 1], questions[idx]] = [questions[idx], questions[idx - 1]];
+        renderQuestions();
+      } else if (btn.dataset.action === 'move-down' && idx < questions.length - 1) {
+        [questions[idx + 1], questions[idx]] = [questions[idx], questions[idx + 1]];
+        renderQuestions();
+      } else if (btn.dataset.action === 'add-opt') {
+        q.options.push('New option');
+        renderQuestions();
+      } else if (btn.dataset.action === 'remove-opt') {
+        const oi = Number(btn.dataset.opt);
+        q.options.splice(oi, 1);
+        renderQuestions();
+      }
+    });
+
+    // Add question buttons
+    document.querySelectorAll('.add-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const type = btn.dataset.type;
+        questions.push({
+          id: nextId++,
+          type,
+          title: typeLabels[type] || 'New Question',
+          required: false,
+          options: (type === 'dropdown' || type === 'multiple') ? ['Option 1', 'Option 2'] : []
+        });
+        renderQuestions();
+        // Scroll to new question
+        setTimeout(() => {
+          const cards = document.querySelectorAll('.question-card');
+          cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 50);
+      });
+    });
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const isPreview = tab.dataset.tab === 'preview';
+        document.getElementById('buildView').style.display = isPreview ? 'none' : 'block';
+        document.getElementById('previewView').classList.toggle('active', isPreview);
+        if (isPreview) renderPreview();
+      });
+    });
+
+    document.getElementById('btnPreview').addEventListener('click', () => {
+      document.querySelector('.tab[data-tab="preview"]').click();
+    });
+
+    // Preview
+    function renderPreview() {
+      const title = document.getElementById('formTitle').value || 'Untitled Form';
+      const desc = document.getElementById('formDesc').value;
+      let html = `
+        <div class="preview-title">${escapeHtml(title)}</div>
+        ${desc ? `<div class="preview-desc">${escapeHtml(desc)}</div>` : ''}
+      `;
+
+      questions.forEach((q, i) => {
+        html += `<div class="preview-q">
+          <label>${escapeHtml(q.title)}${q.required ? ' <span class="required-star">*</span>' : ''}</label>`;
+
+        if (q.type === 'short') {
+          html += `<input class="preview-input" type="text" placeholder="Your answer" disabled />`;
+        } else if (q.type === 'paragraph') {
+          html += `<textarea class="preview-input" rows="3" placeholder="Your answer" disabled></textarea>`;
+        } else if (q.type === 'dropdown') {
+          html += `<select class="preview-input" disabled>
+            <option>Select an option</option>
+            ${q.options.map(o => `<option>${escapeHtml(o)}</option>`).join('')}
+          </select>`;
+        } else if (q.type === 'multiple') {
+          html += `<div class="preview-options">
+            ${q.options.map(o => `
+              <label><input type="radio" name="q${i}" disabled /> ${escapeHtml(o)}</label>
+            `).join('')}
+          </div>`;
+        }
+        html += `</div>`;
+      });
+
+      if (questions.length === 0) {
+        html += `<div class="empty-state"><p>No questions to preview</p></div>`;
+      }
+
+      document.getElementById('previewContent').innerHTML = html;
+    }
+
+    // Export
+    document.getElementById('btnExport').addEventListener('click', () => {
+      const title = document.getElementById('formTitle').value || 'Untitled Form';
+      const desc = document.getElementById('formDesc').value;
+
+      document.getElementById('exportTitleDesc').textContent =
+        `Title: ${title}\nDescription: ${desc}`;
+
+      let qText = '';
+      questions.forEach((q, i) => {
+        qText += `${i + 1}. ${q.title}  [${typeLabels[q.type]}]${q.required ? '  (Required)' : ''}\n`;
+        if (q.options.length) {
+          q.options.forEach((o, oi) => {
+            qText += `   ${oi + 1}. ${o}\n`;
+          });
+        }
+        qText += '\n';
+      });
+      document.getElementById('exportQuestions').textContent = qText || 'No questions added yet.';
+
+      document.getElementById('exportModal').classList.add('show');
+    });
+
+    document.getElementById('closeModal').addEventListener('click', () => {
+      document.getElementById('exportModal').classList.remove('show');
+    });
+
+    document.getElementById('exportModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) e.currentTarget.classList.remove('show');
+    });
+
+    document.getElementById('copyAllBtn').addEventListener('click', () => {
+      const title = document.getElementById('formTitle').value;
+      const desc = document.getElementById('formDesc').value;
+      let text = `Form Title: ${title}\nDescription: ${desc}\n\nQuestions:\n`;
+      questions.forEach((q, i) => {
+        text += `${i + 1}. ${q.title} [${typeLabels[q.type]}]${q.required ? ' (Required)' : ''}\n`;
+        q.options.forEach((o, oi) => text += `   - ${o}\n`);
+      });
+      navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
+    });
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2200);
+    }
+
+    // Initial render
+    renderQuestions();
+  </script>
+</body>
+</html>
