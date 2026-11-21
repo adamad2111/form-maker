@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>iOS 27 Form Studio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter & SF Pro style typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        ios: {
+                            blue: '#007AFF',
+                            indigo: '#5856D6',
+                            purple: '#AF52DE',
+                            pink: '#FF2D55',
+                            red: '#FF3B30',
+                            orange: '#FF9500',
+                            yellow: '#FFCC00',
+                            green: '#34C759',
+                            teal: '#5AC8FA',
+                            gray: '#8E8E93',
+                            bgLight: '#F2F2F7',
+                            bgDark: '#000000',
+                            cardLight: 'rgba(255, 255, 255, 0.78)',
+                            cardDark: 'rgba(28, 28, 30, 0.75)',
+                        }
+                    },
+                    boxShadow: {
+                        'ios-glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
+                        'ios-float': '0 20px 40px -15px rgba(0,0,0,0.12)',
+                        'ios-pill': '0 4px 20px rgba(0, 0, 0, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* iOS 27 Spatial Glass & Custom Scrollbars */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+        }
+
+        .ios-mesh-bg {
+            background-color: #f2f2f7;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(211,100%,88%,0.65) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(280,100%,90%,0.55) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(195,100%,88%,0.55) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, hsla(340,100%,92%,0.45) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        .dark .ios-mesh-bg {
+            background-color: #050507;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(215, 80%, 18%, 0.6) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(275, 70%, 16%, 0.5) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, hsla(195, 80%, 14%, 0.5) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, hsla(335, 70%, 15%, 0.4) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        .glass-panel {
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.55);
+        }
+
+        .dark .glass-panel {
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* iOS Toggle Switch */
+        .ios-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 30px;
+        }
+        .ios-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .ios-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(120, 120, 128, 0.25);
+            transition: .3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-radius: 34px;
+        }
+        .ios-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input:checked + .ios-slider {
+            background-color: #34C759;
+        }
+        input:checked + .ios-slider:before {
+            transform: translateX(20px);
+        }
+
+        /* Smooth Spring Transitions */
+        .spring-card {
+            transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
+        }
+        .spring-card:active {
+            transform: scale(0.992);
+        }
+
+        /* Hide scrollbars cleanly */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    
+        /* Participant (shared form link) mode: only the form is visible */
+        html.participant header,
+        html.participant #view-build,
+        html.participant #view-responses,
+        html.participant #settingsModal,
+        html.participant #previewDispatchNote,
+        html.participant #modalCsvBtn { display: none !important; }
+        html.participant main { padding-top: 1.5rem; }
+    </style>
+</head>
+<body class="ios-mesh-bg text-slate-900 dark:text-white min-h-screen pb-32 transition-colors duration-300">
+
+    <!-- iOS 27 Top Status & Dynamic Island Header -->
+    <header class="sticky top-0 z-40 glass-panel bg-white/70 dark:bg-zinc-900/70 border-b border-black/5 dark:border-white/10">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
+            <!-- Brand / App Title -->
+            <div class="flex items-center gap-2.5">
+                <div id="themeIconBadge" class="w-9 h-9 rounded-2xl bg-ios-blue flex items-center justify-center text-white shadow-md">
+                    <i data-lucide="layers" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-bold text-base tracking-tight">FormOS</span>
+                        <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-black/5 dark:bg-white/10 text-slate-600 dark:text-slate-300">iOS 27</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[140px] sm:max-w-xs">
+                        Target: <span class="font-medium text-ios-blue">adam23348@gmail.com</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Dynamic Island Pill Notification (Interactive) -->
+            <div id="dynamicIsland" class="hidden md:flex items-center gap-2 px-4 py-1.5 rounded-full bg-black text-white text-xs font-medium shadow-lg transition-all duration-300">
+            <!-- Right Actions: Export HTML, Theme & Dark Mode -->
+            <div class="flex items-center gap-2">
+                <button onclick="createNewForm()" class="px-3 py-2 rounded-full bg-ios-orange/10 text-ios-orange hover:bg-ios-orange hover:text-white transition text-xs font-semibold flex items-center gap-1.5" title="Start a brand-new blank form">
+                    <i data-lucide="file-plus-2" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">New Form</span>
+                </button>
+                <button onclick="copyFormLink()" class="px-3 py-2 rounded-full bg-ios-green/10 text-ios-green hover:bg-ios-green hover:text-white transition text-xs font-semibold flex items-center gap-1.5" title="Copy the link to share with participants">
+                    <i data-lucide="link" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Form Link</span>
+                </button>
+                <button onclick="downloadStandaloneHTML()" class="px-3 py-2 rounded-full bg-ios-blue/10 text-ios-blue hover:bg-ios-blue hover:text-white transition text-xs font-semibold flex items-center gap-1.5" title="Download index.html for Vercel">
+                    <i data-lucide="file-code-2" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Download index.html</span>
+                </button>
+                <button onclick="openSettingsModal()" class="p-2.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition" title="Form & Email Settings">
+                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                </button>
+                <button onclick="toggleDarkMode()" class="p-2.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition" title="Toggle Appearance">
+                    <i id="darkModeIcon" data-lucide="moon" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- iOS Segmented Control Navigation -->
+        <div class="max-w-md mx-auto px-4 pb-3">
+            <div class="grid grid-cols-3 p-1 rounded-2xl bg-black/5 dark:bg-white/10 relative">
+                <button onclick="switchTab('build')" id="tab-build" class="tab-btn py-1.5 text-xs sm:text-sm font-semibold rounded-xl bg-white dark:bg-zinc-800 shadow-sm text-slate-900 dark:text-white transition-all">
+                    Build & Edit
+                </button>
+                <button onclick="switchTab('preview')" id="tab-preview" class="tab-btn py-1.5 text-xs sm:text-sm font-medium rounded-xl text-slate-600 dark:text-slate-400 transition-all">
+                    Live Form
+                </button>
+                <button onclick="switchTab('responses')" id="tab-responses" class="tab-btn py-1.5 text-xs sm:text-sm font-medium rounded-xl text-slate-600 dark:text-slate-400 transition-all flex items-center justify-center gap-1.5">
+                    Data Sheet
+                    <span id="responseCountBadge" class="px-1.5 py-0.2 text-[10px] rounded-full bg-ios-blue text-white font-bold">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
+
+        <!-- ==================== TAB 1: BUILD & EDIT ==================== -->
+        <section id="view-build" class="space-y-5">
+            
+            <!-- Form Header Card (Editable Title, Description, Cover Banner) -->
+            <div class="glass-panel bg-ios-cardLight dark:bg-ios-cardDark rounded-[28px] shadow-ios-glass overflow-hidden spring-card">
+                <!-- Optional Header Banner Image -->
+                <div id="formBannerContainer" class="relative hidden group">
+                    <img id="formBannerImg" src="" alt="Form Cover" class="w-full h-44 sm:h-56 object-cover">
+                    <button onclick="removeFormBanner()" class="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white backdrop-blur-md hover:bg-red-500 transition">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- Top Accent Strip -->
+                <div id="formAccentStrip" class="h-2.5 w-full bg-ios-blue transition-colors"></div>
+
+                <div class="p-5 sm:p-7 space-y-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-ios-blue" id="accentLabel">Application Form Header</span>
+                        <label class="cursor-pointer inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 transition">
+                            <i data-lucide="image-plus" class="w-3.5 h-3.5 text-ios-blue"></i>
+                            <span>Import Cover Image</span>
+                            <input type="file" accept="image/*" class="hidden" onchange="handleBannerUpload(event)">
+                        </label>
+                    </div>
+
+                    <input type="text" id="formTitleInput" value="Executive Product Designer Application" 
+                        oninput="updateFormMeta('title', this.value)"
+                        placeholder="Form Application Title..."
+                        class="w-full text-2xl sm:text-3xl font-bold bg-transparent border-b border-transparent focus:border-ios-blue focus:outline-none pb-1 transition">
+
+                    <textarea id="formDescInput" rows="2" 
+                        oninput="updateFormMeta('description', this.value)"
+                        placeholder="Add form instructions, role details, or welcome message..."
+                        class="w-full text-sm sm:text-base text-slate-600 dark:text-slate-300 bg-transparent border-b border-transparent focus:border-ios-blue focus:outline-none resize-none transition">Please complete all required sections below. You may attach portfolio visuals or answer directly. Your application sheet is automatically routed to adam23348@gmail.com.</textarea>
+
+                    <!-- Quick Theme Accent Picker -->
+                    <div class="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-black/5 dark:border-white/10">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-medium text-slate-500 dark:text-slate-400">iOS Accent:</span>
+                            <button onclick="setAccentColor('#007AFF', 'bg-ios-blue', 'text-ios-blue')" class="w-6 h-6 rounded-full bg-[#007AFF] ring-2 ring-offset-2 ring-transparent hover:scale-110 transition"></button>
+                            <button onclick="setAccentColor('#5856D6', 'bg-ios-indigo', 'text-ios-indigo')" class="w-6 h-6 rounded-full bg-[#5856D6] hover:scale-110 transition"></button>
+                            <button onclick="setAccentColor('#AF52DE', 'bg-ios-purple', 'text-ios-purple')" class="w-6 h-6 rounded-full bg-[#AF52DE] hover:scale-110 transition"></button>
+                            <button onclick="setAccentColor('#FF2D55', 'bg-ios-pink', 'text-ios-pink')" class="w-6 h-6 rounded-full bg-[#FF2D55] hover:scale-110 transition"></button>
+                            <button onclick="setAccentColor('#34C759', 'bg-ios-green', 'text-ios-green')" class="w-6 h-6 rounded-full bg-[#34C759] hover:scale-110 transition"></button>
+                            <button onclick="setAccentColor('#FF9500', 'bg-ios-orange', 'text-ios-orange')" class="w-6 h-6 rounded-full bg-[#FF9500] hover:scale-110 transition"></button>
+                        </div>
+                        <div class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <i data-lucide="mail-check" class="w-3.5 h-3.5 text-ios-green"></i>
+                            <span>Recipient: <strong id="recipientDisplay">adam23348@gmail.com</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Form Link Card -->
+            <div class="glass-panel bg-ios-cardLight dark:bg-ios-cardDark rounded-[24px] p-4 sm:p-5 shadow-ios-glass space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-ios-green/15 text-ios-green flex items-center justify-center shrink-0">
+                        <i data-lucide="link" class="w-5 h-5"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-semibold">Share Live Form</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Create a link participants can open to fill your form.</p>
+                    </div>
+                    <button onclick="createLiveFormLink()" class="px-4 py-2.5 rounded-2xl bg-ios-green text-white hover:opacity-90 active:scale-95 text-xs font-semibold flex items-center gap-1.5 shadow-md transition shrink-0">
+                        <i data-lucide="link-2" class="w-4 h-4"></i>
+                        <span>Create Live Form Link</span>
+                    </button>
+                </div>
+                <div id="liveLinkResult" class="hidden space-y-2">
+                    <div class="flex items-center gap-2">
+                        <input id="liveLinkInput" type="text" readonly onclick="this.select()"
+                            class="flex-1 min-w-0 text-xs px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 focus:outline-none focus:ring-2 focus:ring-ios-green">
+                        <button onclick="copyFormLink()" class="px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-xs font-semibold flex items-center gap-1.5 transition">
+                            <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy
+                        </button>
+                        <a id="liveLinkOpen" href="#form" target="_blank" rel="noopener" class="px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 text-xs font-semibold flex items-center gap-1.5 transition">
+                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Open
+                        </a>
+                    </div>
+                    <p id="liveLinkNote" class="text-[11px] text-slate-500 dark:text-slate-400"></p>
+                </div>
+            </div>
+
+            <!-- Dynamic Questions Builder List -->
+            <div id="questionsBuilderList" class="space-y-4">
+                <!-- Questions rendered via JS -->
+            </div>
+
+            <!-- New Form -->
+            <button onclick="createNewForm()" class="w-full py-3.5 rounded-[24px] bg-ios-orange/10 text-ios-orange hover:bg-ios-orange hover:text-white transition text-sm font-semibold flex items-center justify-center gap-2">
+                <i data-lucide="file-plus-2" class="w-4 h-4"></i> Create New Form
+            </button>
+
+            <!-- Add Question Floating Dock (Inline for convenience) -->
+            <div class="glass-panel bg-ios-cardLight dark:bg-ios-cardDark rounded-[24px] p-4 shadow-ios-glass">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3 px-1">Add Customized Field</p>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button onclick="addQuestion('short_text')" class="flex items-center gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-ios-blue hover:text-white transition text-xs font-semibold">
+                        <i data-lucide="type" class="w-4 h-4"></i> Short Text
+                    </button>
+                    <button onclick="addQuestion('paragraph')" class="flex items-center gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-ios-blue hover:text-white transition text-xs font-semibold">
+                        <i data-lucide="align-left" class="w-4 h-4"></i> Paragraph
+                    </button>
+                    <button onclick="addQuestion('multiple_choice')" class="flex items-center gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-ios-blue hover:text-white transition text-xs font-semibold">
+                        <i data-lucide="circle-dot" class="w-4 h-4"></i> Single Choice
+                    </button>
+                    <button onclick="addQuestion('checkboxes')" class="flex items-center gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-ios-blue hover:text-white transition text-xs font-semibold">
+                        <i data-lucide="check-square" class="w-4 h-4"></i> Checkboxes
+                    </button>
+                    <button onclick="addQuestion('dropdown')" class="flex items-center gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-ios-blue hover:text-white transition text-xs font-semibold">
+                        <i data-lucide="chevron-down-circle" class="w-4 h-4"></i> Dropdown
+                    </button>
+                    <button onclick="addQuestion('rating')" class="flex items-center gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-ios-blue hover:text-white transition text-xs font-semibold">
+                        <i data-lucide="star" class="w-4 h-4"></i> 1-5 Rating
+                    </button>
+                    <button onclick="addQuestion('date')" class="flex items-center gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-ios-blue hover:text-white transition text-xs font-semibold">
+                        <i data-lucide="calendar" class="w-4 h-4"></i> Date Picker
+                    </button>
+                    <button onclick="addQuestion('photo_only')" class="flex items-center gap-2 p-3 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-ios-blue hover:text-white transition text-xs font-semibold">
+                        <i data-lucide="image" class="w-4 h-4"></i> Photo Only
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== TAB 2: LIVE FORM PREVIEW & SUBMISSION ==================== -->
+        <section id="view-preview" class="hidden space-y-5">
+            <div class="glass-panel bg-ios-cardLight dark:bg-ios-cardDark rounded-[28px] shadow-ios-glass overflow-hidden">
+                <div id="previewBannerWrapper" class="hidden">
+                    <img id="previewBannerImg" src="" alt="Banner" class="w-full h-48 sm:h-60 object-cover">
+                </div>
+                <div id="previewAccentStrip" class="h-2.5 w-full bg-ios-blue"></div>
+                <div class="p-6 sm:p-8">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-ios-blue/10 text-ios-blue mb-3">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Official Application Form
+                    </span>
+                    <h1 id="previewTitle" class="text-2xl sm:text-3xl font-bold tracking-tight mb-2"></h1>
+                    <p id="previewDesc" class="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed"></p>
+                </div>
+            </div>
+
+            <form id="liveApplicationForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                <div id="previewQuestionsList" class="space-y-4">
+                    <!-- Rendered interactive form fields -->
+                </div>
+
+                <!-- Submit Action Bar -->
+                <div class="glass-panel bg-ios-cardLight dark:bg-ios-cardDark rounded-[24px] p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-ios-glass">
+                    <div id="previewDispatchNote" class="hidden"></div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 text-center sm:text-left">Review your answers, then tap Submit.</p>
+                    <button type="submit" id="submitFormBtn" class="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-ios-blue hover:opacity-90 active:scale-95 text-white font-semibold text-sm shadow-lg transition flex items-center justify-center gap-2">
+                        <span>Submit</span>
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- ==================== TAB 3: DATA SHEET & EMAIL DISPATCH ==================== -->
+        <section id="view-responses" class="hidden space-y-5">
+            <!-- Data Sheet Control Header -->
+            <div class="glass-panel bg-ios-cardLight dark:bg-ios-cardDark rounded-[28px] p-6 shadow-ios-glass space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold flex items-center gap-2">
+                            <i data-lucide="table-2" class="w-5 h-5 text-ios-blue"></i>
+                            Application Data Sheet
+                        </h2>
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                            Compiled responses ready to send to <strong class="text-slate-800 dark:text-white" id="sheetRecipientLabel">adam23348@gmail.com</strong>
+                        </p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="exportCSV()" class="px-4 py-2.5 rounded-2xl bg-black/5 dark:bg-white/10 hover:bg-black/10 text-xs font-semibold flex items-center gap-1.5 transition">
+                            <i data-lucide="download" class="w-4 h-4 text-ios-blue"></i> Download CSV Sheet
+                        </button>
+                        <button onclick="dispatchEmailSheet()" class="px-4 py-2.5 rounded-2xl bg-ios-green text-white hover:opacity-90 text-xs font-semibold flex items-center gap-1.5 shadow-md transition">
+                            <i data-lucide="mail" class="w-4 h-4"></i> Send Sheet to Email
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Summary Stats -->
+                <div class="grid grid-cols-3 gap-3 pt-2">
+                    <div class="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5">
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Total Applications</p>
+                        <p id="statTotal" class="text-xl font-bold mt-0.5">0</p>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5">
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Active Questions</p>
+                        <p id="statQuestions" class="text-xl font-bold mt-0.5">0</p>
+                    </div>
+                    <div class="p-3.5 rounded-2xl bg-black/5 dark:bg-white/5">
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Dispatch Status</p>
+                        <p class="text-xs sm:text-sm font-bold text-ios-green mt-1.5 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-ios-green"></span> Synced
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Data Sheet Table -->
+            <div class="glass-panel bg-ios-cardLight dark:bg-ios-cardDark rounded-[28px] shadow-ios-glass overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead id="dataSheetHead" class="bg-black/5 dark:bg-white/5 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
+                            <!-- Dynamic Columns -->
+                        </thead>
+                        <tbody id="dataSheetBody" class="divide-y divide-black/5 dark:divide-white/10 text-xs sm:text-sm">
+                            <!-- Dynamic Rows -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="emptySheetState" class="p-10 text-center space-y-2">
+                    <div class="w-12 h-12 rounded-2xl bg-black/5 dark:bg-white/10 mx-auto flex items-center justify-center text-slate-400">
+                        <i data-lucide="inbox" class="w-6 h-6"></i>
+                    </div>
+                    <p class="font-semibold text-sm">No Applications Submitted Yet</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Switch to the "Live Form" tab to test submitting an application, or add sample data below.</p>
+                    <button onclick="seedSampleSubmission()" class="mt-2 px-4 py-2 rounded-xl bg-ios-blue/10 text-ios-blue text-xs font-semibold hover:bg-ios-blue/20 transition">
+                        + Generate Sample Application Entry
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== MODAL: SETTINGS & EMAIL CONFIGURATION ==================== -->
+    <div id="settingsModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/40 backdrop-blur-md">
+        <div class="glass-panel bg-white/95 dark:bg-zinc-900/95 w-full max-w-md rounded-[32px] p-6 shadow-2xl space-y-5 animate-fade-in">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold">Form & Dispatch Settings</h3>
+                <button onclick="closeSettingsModal()" class="p-2 rounded-full bg-black/5 dark:bg-white/10">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">Destination Email for Data Sheet</label>
+                    <input type="email" id="settingsEmailInput" value="adam23348@gmail.com"
+                        class="w-full px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ios-blue">
+                </div>
+
+                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-black/5 dark:bg-white/5">
+                    <div>
+                        <p class="text-sm font-semibold">Auto-Open Mail Sheet on Submit</p>
+                        <p class="text-xs text-slate-500">Triggers formatted email client dispatch</p>
+                    </div>
+                    <label class="ios-switch">
+                        <input type="checkbox" id="autoMailToggle" checked>
+                        <span class="ios-slider"></span>
+                    </label>
+                </div>
+
+                <div class="flex items-center justify-between p-3.5 rounded-2xl bg-black/5 dark:bg-white/5">
+                    <div>
+                        <p class="text-sm font-semibold">Reset Form to Default Template</p>
+                        <p class="text-xs text-slate-500">Restore original questions</p>
+                    </div>
+                    <button onclick="resetToDefaultForm()" class="px-3 py-1.5 rounded-xl bg-red-500/10 text-red-500 text-xs font-semibold">
+                        Reset
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="saveSettings()" class="w-full py-3.5 rounded-2xl bg-ios-blue text-white font-semibold text-sm shadow-md">
+                Save Configuration
+            </button>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: SUBMISSION & EMAIL DISPATCH RECEIPT ==================== -->
+    <div id="dispatchModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 backdrop-blur-md">
+        <div class="glass-panel bg-white/95 dark:bg-zinc-900/95 w-full max-w-lg rounded-[32px] p-6 sm:p-7 shadow-2xl space-y-5">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-ios-green/15 text-ios-green flex items-center justify-center">
+                    <i data-lucide="check-circle-2" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold">Application Recorded & Ready</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Your answers are compiled and ready to send</p>
+                </div>
+            </div>
+
+            <!-- Formatted Data Sheet Preview Box -->
+            <div class="p-4 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/10 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500">Data Sheet Payload Preview</span>
+                    <button onclick="copySheetPayload()" class="text-xs font-semibold text-ios-blue flex items-center gap-1 hover:underline">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Sheet
+                    </button>
+                </div>
+                <pre id="dispatchPreviewText" class="text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap max-h-48 overflow-y-auto no-scrollbar"></pre>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <a id="mailtoTriggerLink" href="#" target="_blank" class="py-3.5 px-4 rounded-2xl bg-ios-blue text-white font-semibold text-xs sm:text-sm text-center flex items-center justify-center gap-2 shadow-lg hover:opacity-95 transition">
+                    <i data-lucide="send" class="w-4 h-4"></i> Open Email App & Send
+                </a>
+                <button id="modalCsvBtn" onclick="exportCSV()" class="py-3.5 px-4 rounded-2xl bg-black/5 dark:bg-white/10 font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 hover:bg-black/10 transition">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4 text-ios-green"></i> Download CSV File
+                </button>
+            </div>
+
+            <button onclick="closeDispatchModal()" class="w-full py-2.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white transition">
+                Done & Return to Form
+            </button>
+        </div>
+    </div>
+
+    <!-- iOS Toast Notification Banner -->
+    <div id="iosToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 translate-y-4">
+        <div class="px-5 py-3 rounded-full bg-zinc-900/90 dark:bg-white/90 text-white dark:text-zinc-900 backdrop-blur-xl shadow-ios-float flex items-center gap-2.5 text-xs font-semibold">
+            <i data-lucide="check-circle" class="w-4 h-4 text-ios-green"></i>
+            <span id="toastMessage">Saved</span>
+        </div>
+    </div>
+
+    <script>
+        // ==================== STATE MANAGEMENT ====================
+        const DEFAULT_STATE = {
+            title: "Executive Product Designer Application",
+            description: "Please complete all required sections below. You may attach portfolio visuals or answer directly. Your responses will be sent securely once you submit.",
+            bannerImage: "",
+            accentHex: "#007AFF",
+            accentBgClass: "bg-ios-blue",
+            accentTextClass: "text-ios-blue",
+            recipientEmail: "adam23348@gmail.com",
+            autoMailOnSubmit: true,
+            questions: [
+                {
+                    id: "q_1",
+                    type: "short_text",
+                    label: "Full Legal Name & Portfolio URL",
+                    placeholder: "e.g., Elena Vance — elenavance.design",
+                    required: true,
+                    image: "",
+                    imageCaption: "",
+                    options: []
+                },
+                {
+                    id: "q_2",
+                    type: "multiple_choice",
+                    label: "Primary Design Specialization",
+                    placeholder: "",
+                    required: true,
+                    image: "",
+                    imageCaption: "",
+                    options: [
+                        "Spatial UI & iOS Systems",
+                        "Design Systems & Architecture",
+                        "Interactive Prototyping & Motion",
+                        "End-to-End Product Strategy"
+                    ]
+                },
+                {
+                    id: "q_3",
+                    type: "checkboxes",
+                    label: "Tools & Frameworks You Master",
+                    placeholder: "",
+                    required: false,
+                    image: "",
+                    imageCaption: "",
+                    options: [
+                        "Figma & Variables",
+                        "SwiftUI / Xcode",
+                        "React & Tailwind CSS",
+                        "Spline / 3D Spatial Tools"
+                    ]
+                },
+                {
+                    id: "q_4",
+                    type: "paragraph",
+                    label: "Describe a complex interface problem you solved recently",
+                    placeholder: "Share your design rationale, constraints, and measurable impact...",
+                    required: true,
+                    image: "",
+                    imageCaption: "",
+                    options: []
+                }
+            ],
+            submissions: []
+        };
+
+        // Filled in automatically when you use "Download index.html" so the shared copy carries its own questions & photos
+        const EMBEDDED_STATE = null;
+
+        // Remove any sentence that contains an email address (so participants never see it)
+        function stripEmails(text) {
+            const emailRe = /[\w.+-]+@[\w-]+(\.[\w-]+)+/;
+            return String(text).split(/(?<=[.!?])\s+/).filter(sent => !emailRe.test(sent)).join(' ').trim();
+        }
+
+        // ==================== SHARE LINK / PARTICIPANT MODE ====================
+        function isParticipantMode() { return location.hash === '#form'; }
+
+        function applyParticipantMode() {
+            const on = isParticipantMode();
+            document.documentElement.classList.toggle('participant', on);
+            if (on) {
+                switchTab('preview');
+                document.title = appState.title || document.title;
+            }
+        }
+        window.addEventListener('hashchange', applyParticipantMode);
+
+        function getFormLink() { return location.href.split('#')[0] + '#form'; }
+        function isHostedOnline() { return !/^(file|blob|about|data):/.test(location.protocol); }
+
+        function createLiveFormLink() {
+            const link = getFormLink();
+            document.getElementById('liveLinkInput').value = link;
+            document.getElementById('liveLinkOpen').href = link;
+            document.getElementById('liveLinkResult').classList.remove('hidden');
+            document.getElementById('liveLinkNote').textContent = isHostedOnline()
+                ? 'Share this link. Participants see only the form — no builder, no data sheet.'
+                : 'This copy is open from your device, so this link will not work for others yet. Click Download index.html, upload that file to your host, open it online, then create the link there.';
+            lucide.createIcons();
+            if (isHostedOnline()) copyFormLink();
+        }
+
+        function copyFormLink() {
+            const link = getFormLink();
+            if (!isHostedOnline()) {
+                showToast("Upload index.html to your host first, then create the link there");
+                return;
+            }
+            const done = () => showToast("Form link copied — share it with participants");
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(link).then(done, () => window.prompt('Copy this participant link:', link));
+            } else {
+                window.prompt('Copy this participant link:', link);
+            }
+        }
+
+        function answerQuestions() {
+            return appState.questions.filter(q => q.type !== 'photo_only');
+        }
+
+        // Old 'Applicant Image Upload' questions become display-only photo questions (their added photo is kept)
+        function migrateState(st) {
+            (st.questions || []).forEach(q => {
+                if (q.type === 'file_upload') {
+                    q.type = 'photo_only';
+                    q.required = false;
+                    if (q.label === 'Upload Reference Image / Screenshot') q.label = 'Photo';
+                }
+            });
+            return st;
+        }
+
+        function loadState() {
+            let saved = null;
+            try { saved = JSON.parse(localStorage.getItem('ios27_form_studio_v1')); } catch (e) {}
+            if (EMBEDDED_STATE) {
+                // Shared copy: the form design (questions, photos, cover) always comes from the file itself.
+                // Only a newer local edit (the owner changing the form) overrides it. Responses stay in this browser.
+                if (saved && (saved.updatedAt || 0) > (EMBEDDED_STATE.exportedAt || 0)) return saved;
+                const s = JSON.parse(JSON.stringify(EMBEDDED_STATE));
+                s.submissions = (saved && saved.submissions) ? saved.submissions : [];
+                return s;
+            }
+            return saved || JSON.parse(JSON.stringify(DEFAULT_STATE));
+        }
+
+        let appState = migrateState(loadState());
+        let activeTab = 'build';
+        let previewApplicantImages = {}; // Temporary storage for applicant image uploads during live form fill
+
+        function saveState() {
+            try {
+                appState.updatedAt = Date.now();
+                localStorage.setItem('ios27_form_studio_v1', JSON.stringify(appState));
+            } catch (e) {
+                showToast("Storage full — consider using smaller images");
+            }
+            updateCounters();
+        }
+
+        // ==================== INITIALIZATION ====================
+        window.onload = function() {
+            // Sync initial form metadata inputs
+            document.getElementById('formTitleInput').value = appState.title;
+            document.getElementById('formDescInput').value = appState.description;
+            document.getElementById('recipientDisplay').textContent = appState.recipientEmail;
+            document.getElementById('settingsEmailInput').value = appState.recipientEmail;
+            document.getElementById('autoMailToggle').checked = appState.autoMailOnSubmit;
+
+            if (appState.bannerImage) {
+                document.getElementById('formBannerImg').src = appState.bannerImage;
+                document.getElementById('formBannerContainer').classList.remove('hidden');
+            }
+
+            applyAccentUI();
+            renderBuilder();
+            renderPreview();
+            renderDataSheet();
+            updateCounters();
+            lucide.createIcons();
+            applyParticipantMode();
+        };
+
+        // ==================== NAVIGATION & THEME ====================
+        function switchTab(tab) {
+            activeTab = tab;
+            ['build', 'preview', 'responses'].forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const btn = document.getElementById(`tab-${t}`);
+                if (t === tab) {
+                    view.classList.remove('hidden');
+                    btn.classList.add('bg-white', 'dark:bg-zinc-800', 'shadow-sm', 'text-slate-900', 'dark:text-white', 'font-semibold');
+                    btn.classList.remove('text-slate-600', 'dark:text-slate-400', 'font-medium');
+                } else {
+                    view.classList.add('hidden');
+                    btn.classList.remove('bg-white', 'dark:bg-zinc-800', 'shadow-sm', 'text-slate-900', 'dark:text-white', 'font-semibold');
+                    btn.classList.add('text-slate-600', 'dark:text-slate-400', 'font-medium');
+                }
+            });
+
+            if (tab === 'preview') renderPreview();
+            if (tab === 'responses') renderDataSheet();
+            lucide.createIcons();
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            const icon = document.getElementById('darkModeIcon');
+            icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+            lucide.createIcons();
+        }
+
+        function setAccentColor(hex, bgClass, textClass) {
+            appState.accentHex = hex;
+            appState.accentBgClass = bgClass;
+            appState.accentTextClass = textClass;
+            applyAccentUI();
+            saveState();
+            showToast("iOS Accent Updated");
+        }
+
+        function applyAccentUI() {
+            document.getElementById('formAccentStrip').style.backgroundColor = appState.accentHex;
+            document.getElementById('previewAccentStrip').style.backgroundColor = appState.accentHex;
+            document.getElementById('themeIconBadge').style.backgroundColor = appState.accentHex;
+            document.getElementById('submitFormBtn').style.backgroundColor = appState.accentHex;
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('iosToast');
+            document.getElementById('toastMessage').textContent = msg;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+            }, 2600);
+        }
+
+        // ==================== FORM HEADER & BANNER ====================
+        function updateFormMeta(key, value) {
+            appState[key] = value;
+            saveState();
+        }
+
+        function handleBannerUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            compressAndReadImage(file, 1200, (base64) => {
+                appState.bannerImage = base64;
+                document.getElementById('formBannerImg').src = base64;
+                document.getElementById('formBannerContainer').classList.remove('hidden');
+                saveState();
+                showToast("Cover Image Imported");
+            });
+        }
+
+        function removeFormBanner() {
+            appState.bannerImage = "";
+            document.getElementById('formBannerContainer').classList.add('hidden');
+            saveState();
+            showToast("Cover Image Removed");
+        }
+
+        // Helper: Compress images cleanly so localStorage stays fast & responsive
+        function compressAndReadImage(file, maxWidth, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    callback(canvas.toDataURL('image/jpeg', 0.82));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ==================== BUILDER: QUESTION CUSTOMIZATION ====================
+        function addQuestion(type = 'short_text') {
+            const labels = {
+                short_text: "Untitled Short Question",
+                paragraph: "Untitled Detailed Question",
+                multiple_choice: "Select One Option",
+                checkboxes: "Select All That Apply",
+                dropdown: "Choose From Dropdown",
+                rating: "Rate Your Experience / Proficiency",
+                date: "Select Availability Date",
+                photo_only: "Photo"
+            };
+
+            const newQ = {
+                id: 'q_' + Date.now(),
+                type: type,
+                label: labels[type] || "New Question",
+                placeholder: "Applicant answer goes here...",
+                required: false,
+                image: "",
+                imageCaption: "",
+                options: ['multiple_choice', 'checkboxes', 'dropdown'].includes(type) 
+                    ? ["Option 1", "Option 2", "Option 3"] 
+                    : []
+            };
+
+            appState.questions.push(newQ);
+            saveState();
+            renderBuilder();
+            showToast("Field Added");
+        }
+
+        function updateQuestion(id, field, value) {
+            const q = appState.questions.find(item => item.id === id);
+            if (!q) return;
+            q[field] = value;
+
+            // Populate default options if switching to a choice type
+            if (field === 'type' && ['multiple_choice', 'checkboxes', 'dropdown'].includes(value) && q.options.length === 0) {
+                q.options = ["Option 1", "Option 2"];
+            }
+            saveState();
+            if (field === 'type') renderBuilder();
+        }
+
+        function duplicateQuestion(id) {
+            const idx = appState.questions.findIndex(item => item.id === id);
+            if (idx === -1) return;
+            const copy = JSON.parse(JSON.stringify(appState.questions[idx]));
+            copy.id = 'q_' + Date.now();
+            copy.label += " (Copy)";
+            appState.questions.splice(idx + 1, 0, copy);
+            saveState();
+            renderBuilder();
+            showToast("Question Duplicated");
+        }
+
+        function deleteQuestion(id) {
+            appState.questions = appState.questions.filter(item => item.id !== id);
+            saveState();
+            renderBuilder();
+            showToast("Question Removed");
+        }
+
+        function moveQuestion(id, direction) {
+            const idx = appState.questions.findIndex(item => item.id === id);
+            if (idx === -1) return;
+            const newIdx = idx + direction;
+            if (newIdx < 0 || newIdx >= appState.questions.length) return;
+            const temp = appState.questions[idx];
+            appState.questions[idx] = appState.questions[newIdx];
+            appState.questions[newIdx] = temp;
+            saveState();
+            renderBuilder();
+        }
+
+        // Options management
+        function addOption(qId) {
+            const q = appState.questions.find(item => item.id === qId);
+            if (!q) return;
+            q.options.push(`Option ${q.options.length + 1}`);
+            saveState();
+            renderBuilder();
+        }
+
+        function updateOption(qId, optIdx, val) {
+            const q = appState.questions.find(item => item.id === qId);
+            if (!q) return;
+            q.options[optIdx] = val;
+            saveState();
+        }
+
+        function removeOption(qId, optIdx) {
+            const q = appState.questions.find(item => item.id === qId);
+            if (!q || q.options.length <= 1) return;
+            q.options.splice(optIdx, 1);
+            saveState();
+            renderBuilder();
+        }
+
+        // Question Image Import
+        function handleQuestionImageImport(qId, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            compressAndReadImage(file, 900, (base64) => {
+                const q = appState.questions.find(item => item.id === qId);
+                if (q) {
+                    q.image = base64;
+                    saveState();
+                    renderBuilder();
+                    showToast("Image Imported to Question");
+                }
+            });
+        }
+
+        function removeQuestionImage(qId) {
+            const q = appState.questions.find(item => item.id === qId);
+            if (q) {
+                q.image = "";
+                q.imageCaption = "";
+                saveState();
+                renderBuilder();
+                showToast("Question Image Removed");
+            }
+        }
+
+        function renderBuilder() {
+            const container = document.getElementById('questionsBuilderList');
+            container.innerHTML = '';
+
+            appState.questions.forEach((q, index) => {
+                const hasOptions = ['multiple_choice', 'checkboxes', 'dropdown'].includes(q.type);
+                
+                const card = document.createElement('div');
+                card.className = "glass-panel bg-ios-cardLight dark:bg-ios-cardDark rounded-[26px] p-5 sm:p-6 shadow-ios-glass space-y-4 spring-card";
+                
+                card.innerHTML = `
+                    <!-- Top Row: Question Number, Type Selector & Reorder -->
+                    <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-black/5 dark:border-white/10">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-black/5 dark:bg-white/10 text-xs font-bold flex items-center justify-center">${index + 1}</span>
+                            <select onchange="updateQuestion('${q.id}', 'type', this.value)" 
+                                class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/10 focus:outline-none focus:ring-2 focus:ring-ios-blue">
+                                <option value="short_text" ${q.type === 'short_text' ? 'selected' : ''}>Short Answer</option>
+                                <option value="paragraph" ${q.type === 'paragraph' ? 'selected' : ''}>Paragraph</option>
+                                <option value="multiple_choice" ${q.type === 'multiple_choice' ? 'selected' : ''}>Multiple Choice</option>
+                                <option value="checkboxes" ${q.type === 'checkboxes' ? 'selected' : ''}>Checkboxes</option>
+                                <option value="dropdown" ${q.type === 'dropdown' ? 'selected' : ''}>Dropdown Menu</option>
+                                <option value="rating" ${q.type === 'rating' ? 'selected' : ''}>1-5 Star Rating</option>
+                                <option value="date" ${q.type === 'date' ? 'selected' : ''}>Date Picker</option>
+                                <option value="photo_only" ${q.type === 'photo_only' ? 'selected' : ''}>Photo Only (no answer)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-1">
+                            <!-- Import Image Button for Question -->
+                            <label class="cursor-pointer px-3 py-1.5 rounded-xl bg-ios-blue/10 text-ios-blue hover:bg-ios-blue/20 text-xs font-semibold flex items-center gap-1.5 transition" title="Import Reference Image">
+                                <i data-lucide="image-plus" class="w-3.5 h-3.5"></i>
+                                <span class="hidden sm:inline">Import Image</span>
+                                <input type="file" accept="image/*" class="hidden" onchange="handleQuestionImageImport('${q.id}', event)">
+                            </label>
+                            <button onclick="moveQuestion('${q.id}', -1)" class="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-slate-500" title="Move Up">
+                                <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="moveQuestion('${q.id}', 1)" class="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-slate-500" title="Move Down">
+                                <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Editable Question Prompt -->
+                    <div>
+                        <input type="text" value="${escapeHtml(q.label)}" 
+                            oninput="updateQuestion('${q.id}', 'label', this.value)"
+                            placeholder="Enter your question prompt..."
+                            class="w-full text-base sm:text-lg font-semibold bg-transparent border-b border-black/10 dark:border-white/15 focus:border-ios-blue focus:outline-none pb-1.5 transition">
+                    </div>
+
+                    <!-- Imported Question Reference Image (if present) -->
+                    ${q.image ? `
+                        <div class="relative rounded-2xl overflow-hidden border border-black/10 dark:border-white/15 bg-black/5">
+                            <img src="${q.image}" alt="Question Reference" class="w-full max-h-64 object-contain mx-auto">
+                            <button onclick="removeQuestionImage('${q.id}')" class="absolute top-2.5 right-2.5 p-2 rounded-full bg-black/65 text-white hover:bg-red-500 transition backdrop-blur-md">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                            <input type="text" value="${escapeHtml(q.imageCaption || '')}" 
+                                oninput="updateQuestion('${q.id}', 'imageCaption', this.value)"
+                                placeholder="Add optional image caption..."
+                                class="w-full px-3 py-2 text-xs bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md focus:outline-none">
+                        </div>
+                    ` : ''}
+
+                    <!-- Type-Specific Customization Area -->
+                    ${hasOptions ? `
+                        <div class="space-y-2 pl-1">
+                            <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Customize Options</p>
+                            ${q.options.map((opt, oIdx) => `
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="${q.type === 'checkboxes' ? 'square' : (q.type === 'dropdown' ? 'chevron-right' : 'circle')}" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                                    <input type="text" value="${escapeHtml(opt)}" 
+                                        oninput="updateOption('${q.id}', ${oIdx}, this.value)"
+                                        class="flex-1 text-sm px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 focus:bg-white dark:focus:bg-zinc-800 focus:ring-2 focus:ring-ios-blue focus:outline-none transition">
+                                    <button onclick="removeOption('${q.id}', ${oIdx})" class="p-1.5 text-slate-400 hover:text-red-500 transition">
+                                        <i data-lucide="x" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                            `).join('')}
+                            <button onclick="addOption('${q.id}')" class="mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-ios-blue hover:underline py-1">
+                                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Another Option
+                            </button>
+                        </div>
+                    ` : q.type === 'photo_only' ? `
+                        <p class="text-xs text-slate-400 pl-1">Display only — use <b>Import Image</b> above to add the photo. Applicants are not asked to answer.</p>
+                    ` : `
+                        <div>
+                            <input type="text" value="${escapeHtml(q.placeholder || '')}" 
+                                oninput="updateQuestion('${q.id}', 'placeholder', this.value)"
+                                placeholder="Customize input placeholder hint..."
+                                class="w-full text-xs text-slate-500 dark:text-slate-400 px-3.5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 focus:outline-none">
+                        </div>
+                    `}
+
+                    <!-- Card Footer: Required Toggle, Duplicate, Delete -->
+                    <div class="pt-3 border-t border-black/5 dark:border-white/10 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5 ${q.type === 'photo_only' ? 'invisible' : ''}">
+                            <label class="ios-switch scale-75 origin-left">
+                                <input type="checkbox" ${q.required ? 'checked' : ''} onchange="updateQuestion('${q.id}', 'required', this.checked)">
+                                <span class="ios-slider"></span>
+                            </label>
+                            <span class="text-xs font-medium text-slate-600 dark:text-slate-300 -ml-2">Required Field</span>
+                        </div>
+
+                        <div class="flex items-center gap-1">
+                            <button onclick="duplicateQuestion('${q.id}')" class="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-slate-500 transition" title="Duplicate">
+                                <i data-lucide="copy" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteQuestion('${q.id}')" class="p-2 rounded-xl hover:bg-red-500/10 text-red-500 transition" title="Delete Question">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            lucide.createIcons();
+        }
+
+        // ==================== LIVE PREVIEW & FORM SUBMISSION ====================
+        function renderPreview() {
+            document.getElementById('previewTitle').textContent = appState.title || "Untitled Form";
+            document.getElementById('previewDesc').textContent = stripEmails(appState.description || "");
+
+            const bannerWrap = document.getElementById('previewBannerWrapper');
+            if (appState.bannerImage) {
+                document.getElementById('previewBannerImg').src = appState.bannerImage;
+                bannerWrap.classList.remove('hidden');
+            } else {
+                bannerWrap.classList.add('hidden');
+            }
+
+            const list = document.getElementById('previewQuestionsList');
+            list.innerHTML = '';
+
+            let answerNo = 0;
+            appState.questions.forEach((q, idx) => {
+                const isPhoto = q.type === 'photo_only';
+                if (!isPhoto) answerNo++;
+                const wrapper = document.createElement('div');
+                wrapper.className = "glass-panel bg-ios-cardLight dark:bg-ios-cardDark rounded-[26px] p-5 sm:p-6 shadow-ios-glass space-y-3.5";
+
+                let inputHtml = '';
+
+                if (q.type === 'short_text') {
+                    inputHtml = `<input type="text" name="${q.id}" ${q.required ? 'required' : ''} placeholder="${escapeHtml(q.placeholder || 'Your answer')}" 
+                        class="w-full px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue transition">`;
+                } 
+                else if (q.type === 'paragraph') {
+                    inputHtml = `<textarea name="${q.id}" rows="3" ${q.required ? 'required' : ''} placeholder="${escapeHtml(q.placeholder || 'Write detailed response...')}" 
+                        class="w-full px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue transition"></textarea>`;
+                } 
+                else if (q.type === 'multiple_choice') {
+                    inputHtml = `<div class="space-y-2">
+                        ${q.options.map((opt, oIdx) => `
+                            <label class="flex items-center gap-3 p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer transition">
+                                <input type="radio" name="${q.id}" value="${escapeHtml(opt)}" ${q.required && oIdx === 0 ? 'required' : ''} class="w-4 h-4 accent-ios-blue">
+                                <span class="text-sm font-medium">${escapeHtml(opt)}</span>
+                            </label>
+                        `).join('')}
+                    </div>`;
+                } 
+                else if (q.type === 'checkboxes') {
+                    inputHtml = `<div class="space-y-2">
+                        ${q.options.map((opt) => `
+                            <label class="flex items-center gap-3 p-3.5 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 cursor-pointer transition">
+                                <input type="checkbox" name="${q.id}" value="${escapeHtml(opt)}" class="w-4 h-4 rounded accent-ios-blue">
+                                <span class="text-sm font-medium">${escapeHtml(opt)}</span>
+                            </label>
+                        `).join('')}
+                    </div>`;
+                } 
+                else if (q.type === 'dropdown') {
+                    inputHtml = `<select name="${q.id}" ${q.required ? 'required' : ''} class="w-full px-4 py-3.5 rounded-2xl bg-black/5 dark:bg-white/10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ios-blue">
+                        <option value="">Select an option...</option>
+                        ${q.options.map(opt => `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('')}
+                    </select>`;
+                } 
+                else if (q.type === 'rating') {
+                    inputHtml = `<div class="flex items-center gap-2">
+                        ${[1, 2, 3, 4, 5].map(num => `
+                            <label class="flex-1 cursor-pointer">
+                                <input type="radio" name="${q.id}" value="${num} / 5 Stars" ${q.required && num === 1 ? 'required' : ''} class="peer hidden">
+                                <div class="py-3 rounded-2xl bg-black/5 dark:bg-white/10 peer-checked:bg-ios-blue peer-checked:text-white text-center font-bold text-sm transition">
+                                    ${num} ★
+                                </div>
+                            </label>
+                        `).join('')}
+                    </div>`;
+                } 
+                else if (q.type === 'date') {
+                    inputHtml = `<input type="date" name="${q.id}" ${q.required ? 'required' : ''} 
+                        class="w-full px-4 py-3 rounded-2xl bg-black/5 dark:bg-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-ios-blue">`;
+                } 
+                
+
+                wrapper.innerHTML = `
+                    <div class="flex items-start justify-between gap-2">
+                        <label class="text-base font-semibold leading-snug">
+                            ${isPhoto ? '' : `<span class="text-slate-400 mr-1">${answerNo}.</span>`} ${escapeHtml(q.label)}
+                            ${!isPhoto && q.required ? '<span class="text-ios-red ml-1">*</span>' : ''}
+                        </label>
+                    </div>
+                    ${q.image ? `
+                        <div class="rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/5">
+                            <img src="${q.image}" alt="Reference" class="w-full max-h-64 object-contain mx-auto">
+                            ${q.imageCaption ? `<p class="px-3.5 py-2 text-xs text-slate-500 dark:text-slate-400 bg-black/5 dark:bg-white/5">${escapeHtml(q.imageCaption)}</p>` : ''}
+                        </div>
+                    ` : ''}
+                    ${isPhoto ? '' : `<div>${inputHtml}</div>`}
+                `;
+                list.appendChild(wrapper);
+            });
+
+            lucide.createIcons();
+        }
+
+        function handleApplicantImageUpload(qId, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            compressAndReadImage(file, 600, (base64) => {
+                previewApplicantImages[qId] = {
+                    name: file.name,
+                    data: base64
+                };
+                const box = document.getElementById(`applicantPreview_${qId}`);
+                if (box) {
+                    box.querySelector('img').src = base64;
+                    box.classList.remove('hidden');
+                }
+                showToast("Image Attached to Response");
+            });
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const entry = {
+                id: 'SUB-' + Math.floor(100000 + Math.random() * 900000),
+                timestamp: new Date().toLocaleString(),
+                answers: {}
+            };
+
+            appState.questions.forEach(q => {
+                if (q.type === 'checkboxes') {
+                    const checked = formData.getAll(q.id);
+                    entry.answers[q.label] = checked.length ? checked.join(', ') : 'None';
+                } else if (q.type === 'photo_only') {
+                    return; // display-only, no answer
+                } else {
+                    entry.answers[q.label] = formData.get(q.id) || '—';
+                }
+            });
+
+            appState.submissions.unshift(entry);
+            saveState();
+            renderDataSheet();
+
+            // Reset form
+            event.target.reset();
+            previewApplicantImages = {};
+            document.querySelectorAll('[id^="applicantPreview_"]').forEach(el => el.classList.add('hidden'));
+
+            // Prepare Dispatch Modal & Mailto link for adam23348@gmail.com
+            openDispatchReceipt(entry);
+        }
+
+        // ==================== DATA SHEET & EMAIL DISPATCH ENGINE ====================
+        function buildFormattedEmailBody(singleEntry = null) {
+            const targetList = singleEntry ? [singleEntry] : appState.submissions;
+            let body = `APPLICATION DATA SHEET — ${appState.title.toUpperCase()}\n`;
+            body += `Generated: ${new Date().toLocaleString()}\n`;
+            body += `Total Records Included: ${targetList.length}\n`;
+            body += `==================================================\n\n`;
+
+            targetList.forEach((sub, i) => {
+                body += `RECORD #${i + 1} [${sub.id}] — ${sub.timestamp}\n`;
+                body += `--------------------------------------------------\n`;
+                Object.entries(sub.answers).forEach(([question, answer]) => {
+                    body += `• ${question}:\n  ${answer}\n\n`;
+                });
+                body += `==================================================\n\n`;
+            });
+
+            return body;
+        }
+
+        function openDispatchReceipt(entry) {
+            const formattedText = buildFormattedEmailBody(entry);
+            const subject = encodeURIComponent(`[FormOS Data Sheet] ${appState.title} (${entry.id})`);
+            const body = encodeURIComponent(formattedText);
+            const mailtoUrl = `mailto:${appState.recipientEmail}?subject=${subject}&body=${body}`;
+
+            document.getElementById('dispatchPreviewText').textContent = formattedText;
+            document.getElementById('mailtoTriggerLink').href = mailtoUrl;
+
+            const modal = document.getElementById('dispatchModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+
+            if (appState.autoMailOnSubmit) {
+                // Attempt seamless email client launch
+                setTimeout(() => {
+                    window.open(mailtoUrl, '_blank');
+                }, 400);
+            }
+        }
+
+        function closeDispatchModal() {
+            const modal = document.getElementById('dispatchModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function dispatchEmailSheet() {
+            if (appState.submissions.length === 0) {
+                showToast("Add or submit an entry first");
+                return;
+            }
+            const formattedText = buildFormattedEmailBody(null);
+            const subject = encodeURIComponent(`[Full Data Sheet] ${appState.title} (${appState.submissions.length} Entries)`);
+            const body = encodeURIComponent(formattedText);
+            const mailtoUrl = `mailto:${appState.recipientEmail}?subject=${subject}&body=${body}`;
+
+            document.getElementById('dispatchPreviewText').textContent = formattedText;
+            document.getElementById('mailtoTriggerLink').href = mailtoUrl;
+
+            const modal = document.getElementById('dispatchModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+        }
+
+        function copySheetPayload() {
+            const text = document.getElementById('dispatchPreviewText').textContent;
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast("Data Sheet Copied to Clipboard");
+        }
+
+        function exportCSV() {
+            if (appState.submissions.length === 0) {
+                showToast("No responses to export");
+                return;
+            }
+            const headers = ["Submission ID", "Timestamp", ...answerQuestions().map(q => q.label)];
+            const rows = appState.submissions.map(sub => {
+                return [
+                    sub.id,
+                    sub.timestamp,
+                    ...answerQuestions().map(q => sub.answers[q.label] || "")
+                ].map(val => `"${String(val).replace(/"/g, '""')}"`).join(",");
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + [headers.map(h => `"${h.replace(/"/g, '""')}"`).join(","), ...rows].join("\n");
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${appState.title.replace(/\s+/g, '_')}_DataSheet.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("CSV Data Sheet Downloaded");
+        }
+
+        function renderDataSheet() {
+            const thead = document.getElementById('dataSheetHead');
+            const tbody = document.getElementById('dataSheetBody');
+            const emptyState = document.getElementById('emptySheetState');
+
+            document.getElementById('sheetRecipientLabel').textContent = appState.recipientEmail;
+            document.getElementById('statTotal').textContent = appState.submissions.length;
+            document.getElementById('statQuestions').textContent = appState.questions.length;
+
+            if (appState.submissions.length === 0) {
+                thead.innerHTML = '';
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            // Render Table Headers
+            thead.innerHTML = `
+                <tr>
+                    <th class="py-3.5 px-4 whitespace-nowrap">ID & Time</th>
+                    ${answerQuestions().map(q => `<th class="py-3.5 px-4 min-w-[160px]">${escapeHtml(q.label)}</th>`).join('')}
+                    <th class="py-3.5 px-4 text-right">Action</th>
+                </tr>
+            `;
+
+            // Render Rows
+            tbody.innerHTML = appState.submissions.map((sub, idx) => `
+                <tr class="hover:bg-black/5 dark:hover:bg-white/5 transition">
+                    <td class="py-3.5 px-4 whitespace-nowrap">
+                        <span class="font-bold text-ios-blue block">${sub.id}</span>
+                        <span class="text-[11px] text-slate-400">${sub.timestamp}</span>
+                    </td>
+                    ${answerQuestions().map(q => `
+                        <td class="py-3.5 px-4 align-top">
+                            <div class="max-w-xs break-words">${escapeHtml(sub.answers[q.label] || '—')}</div>
+                        </td>
+                    `).join('')}
+                    <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                        <button onclick="deleteSubmission(${idx})" class="p-1.5 rounded-lg text-red-500 hover:bg-red-500/10 transition" title="Delete Entry">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            lucide.createIcons();
+        }
+
+        function deleteSubmission(index) {
+            appState.submissions.splice(index, 1);
+            saveState();
+            renderDataSheet();
+            showToast("Record Deleted");
+        }
+
+        function seedSampleSubmission() {
+            const sample = {
+                id: 'SUB-' + Math.floor(100000 + Math.random() * 900000),
+                timestamp: new Date().toLocaleString(),
+                answers: {}
+            };
+            answerQuestions().forEach(q => {
+                if (q.type === 'multiple_choice' || q.type === 'dropdown') {
+                    sample.answers[q.label] = q.options[0] || "Selected Option";
+                } else if (q.type === 'checkboxes') {
+                    sample.answers[q.label] = q.options.slice(0, 2).join(', ');
+                } else if (q.type === 'rating') {
+                    sample.answers[q.label] = "5 / 5 Stars";
+                } else if (q.type === 'date') {
+                    sample.answers[q.label] = "2026-12-01";
+                } else {
+                    sample.answers[q.label] = "Sample Applicant Response Data";
+                }
+            });
+            appState.submissions.unshift(sample);
+            saveState();
+            renderDataSheet();
+            showToast("Sample Entry Added to Sheet");
+        }
+
+        // ==================== SETTINGS MODAL ====================
+        function openSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveSettings() {
+            const newEmail = document.getElementById('settingsEmailInput').value.trim();
+            if (newEmail) {
+                appState.recipientEmail = newEmail;
+                document.getElementById('recipientDisplay').textContent = newEmail;
+                    document.getElementById('sheetRecipientLabel').textContent = newEmail;
+            }
+            appState.autoMailOnSubmit = document.getElementById('autoMailToggle').checked;
+            saveState();
+            closeSettingsModal();
+            showToast("Configuration Saved");
+        }
+
+        function createNewForm() {
+            const hasWork = appState.questions.length > 0 || appState.submissions.length > 0;
+            if (hasWork && !confirm("Start a new blank form?\n\nThis clears the current questions, photos and collected responses on this device. Download index.html first if you want to keep this form.")) {
+                return;
+            }
+            appState = {
+                title: "Untitled Form",
+                description: "",
+                bannerImage: "",
+                accentHex: "#007AFF",
+                accentBgClass: "bg-ios-blue",
+                accentTextClass: "text-ios-blue",
+                recipientEmail: appState.recipientEmail,
+                autoMailOnSubmit: appState.autoMailOnSubmit,
+                questions: [{
+                    id: 'q_' + Date.now(),
+                    type: 'short_text',
+                    label: 'Untitled Question',
+                    placeholder: 'Your answer',
+                    required: false,
+                    image: "",
+                    imageCaption: "",
+                    options: []
+                }],
+                submissions: []
+            };
+            previewApplicantImages = {};
+            saveState();
+            document.getElementById('formTitleInput').value = appState.title;
+            document.getElementById('formDescInput').value = appState.description;
+            document.getElementById('formBannerContainer').classList.add('hidden');
+            document.getElementById('formBannerImg').src = '';
+            document.getElementById('liveLinkResult').classList.add('hidden');
+            applyAccentUI();
+            renderBuilder();
+            renderPreview();
+            renderDataSheet();
+            updateCounters();
+            switchTab('build');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showToast("New Blank Form Created");
+        }
+
+        function resetToDefaultForm() {
+            appState = JSON.parse(JSON.stringify(DEFAULT_STATE));
+            saveState();
+            document.getElementById('formTitleInput').value = appState.title;
+            document.getElementById('formDescInput').value = appState.description;
+            document.getElementById('formBannerContainer').classList.add('hidden');
+            applyAccentUI();
+            renderBuilder();
+            renderPreview();
+            renderDataSheet();
+            closeSettingsModal();
+            showToast("Reset to Default Template");
+        }
+
+        function updateCounters() {
+            document.getElementById('responseCountBadge').textContent = appState.submissions.length;
+        }
+
+        function downloadStandaloneHTML() {
+            // Embed the form design (questions, reference photos, cover) directly in the file.
+            // Responses collected in your browser are NOT included.
+            const shared = JSON.parse(JSON.stringify(appState));
+            shared.submissions = [];
+            shared.exportedAt = Date.now();
+            const stateJs = JSON.stringify(shared).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+
+            let htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+            htmlContent = htmlContent.replace(/const EMBEDDED_STATE = [\s\S]*?;\n/, () => 'const EMBEDDED_STATE = ' + stateJs + ';\n');
+
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'index.html';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showToast("index.html Downloaded!");
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
